@@ -1,0 +1,1967 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Bảo Vệ Khách Hàng | 客户保护与冲突管理系统</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- SheetJS (Xuất Excel .xlsx) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Google Fonts: Inter & Noto Sans SC -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html {
+            font-size: 16.5px;
+        }
+        body {
+            font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #F4F7FB;
+            color: #0D1B2A;
+            overflow-x: hidden;
+            line-height: 1.55;
+        }
+        ::-webkit-scrollbar { width: 7px; height: 7px; }
+        ::-webkit-scrollbar-track { background: #F1F5F9; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+        .tab-active {
+            background-color: #EFF6FF;
+            color: #1554B5;
+            border-bottom: 3px solid #1554B5;
+            font-weight: 700;
+        }
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.97) translateY(6px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-modal { animation: fadeInScale 0.18s ease-out forwards; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- ==================== MÀN HÌNH ĐĂNG NHẬP ==================== -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-[#073B8C] via-[#1554B5] to-[#0F172A]">
+        <div class="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden animate-modal">
+            <div class="p-7 sm:p-9">
+                <!-- Logo & Thương hiệu -->
+                <div class="flex flex-col items-center text-center mb-7">
+                    <div id="loginLogoContainer" class="mb-3.5"></div>
+                    <h1 class="text-2xl sm:text-[26px] font-extrabold text-[#0D1B2A] tracking-tight">Hệ Thống Bảo Vệ Khách Hàng</h1>
+                    <p class="text-sm sm:text-base font-medium text-[#52647A] mt-1">客户保护与冲突管理系统 • LEOREN</p>
+                </div>
+
+                <!-- Biểu mẫu Đăng nhập -->
+                <form id="loginForm" class="space-y-4.5" onsubmit="event.preventDefault(); executeLoginAttempt();">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Email Đăng Nhập 登录邮箱 <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400">
+                                <i class="fas fa-envelope text-base"></i>
+                            </span>
+                            <input type="email" id="loginEmail" required autocomplete="username"
+                                placeholder="Ví dụ: sale01@leoren.vn"
+                                class="w-full h-12 pl-11 pr-4 text-[15px] border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1554B5] focus:border-[#1554B5] transition">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Mật Khẩu 登录密码 <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400">
+                                <i class="fas fa-lock text-base"></i>
+                            </span>
+                            <input type="password" id="loginPassword" required autocomplete="current-password"
+                                placeholder="Nhập mật khẩu của bạn..."
+                                class="w-full h-12 pl-11 pr-12 text-[15px] border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1554B5] focus:border-[#1554B5] transition">
+                            <button type="button" onclick="togglePasswordVisibility('loginPassword', 'loginEyeIcon')"
+                                class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600">
+                                <i id="loginEyeIcon" class="fas fa-eye text-base"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600 pt-1">
+                        <label class="inline-flex items-center gap-2.5 cursor-pointer select-none">
+                            <input type="checkbox" id="rememberMeCheckbox" checked class="w-4 h-4 rounded border-slate-300 text-[#1554B5] focus:ring-[#1554B5]">
+                            <span>Ghi nhớ đăng nhập 保持登录</span>
+                        </label>
+                        <span id="loginCloudBadge" class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Cloud Sẵn Sàng
+                        </span>
+                    </div>
+
+                    <div id="loginErrorMsg" class="hidden text-sm font-medium text-red-600 bg-red-50 border border-red-200 px-3.5 py-3 rounded-xl"></div>
+
+                    <button type="submit" id="loginSubmitBtn"
+                        class="w-full h-13 py-3 bg-[#1554B5] hover:bg-[#073B8C] active:scale-[0.99] text-white text-base font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2.5 cursor-pointer mt-2">
+                        <i class="fas fa-right-to-bracket"></i>
+                        <span>Đăng Nhập Hệ Thống 登录系统</span>
+                    </button>
+                </form>
+
+                <div class="mt-6 pt-4 border-t border-slate-100 text-center">
+                    <p class="text-xs sm:text-[13px] text-slate-500 leading-relaxed">
+                        Sale đăng nhập lần đầu bằng mật khẩu Admin cấp sẽ được yêu cầu đổi mật khẩu riêng tư (mã hóa bảo mật SHA-256).<br>
+                        <span class="text-slate-400">首次登录必须修改专属密码（SHA-256加密保护）</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== GIAO DIỆN CHÍNH SAU KHI ĐĂNG NHẬP ==================== -->
+    <div id="mainAppScreen" class="hidden flex-1 flex flex-col">
+        <!-- Thanh Điều Hướng Trên Cùng -->
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 h-18 py-2.5 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3.5 min-w-0">
+                    <div id="headerLogoContainer" class="shrink-0"></div>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2.5">
+                            <h2 class="text-base sm:text-lg font-extrabold text-[#0D1B2A] truncate">Bảo Vệ Khách Hàng LEOREN</h2>
+                            <span id="cloudSyncPill" class="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                Đã đồng bộ Cloud
+                            </span>
+                        </div>
+                        <p class="text-xs sm:text-[13px] text-slate-500 truncate">客户保护与冲突管理系统 • 90 / 180 Ngày</p>
+                    </div>
+                </div>
+
+                <!-- Thông tin User & Nút chức năng -->
+                <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+                    <button type="button" onclick="forceSyncNow(false)" title="Đồng bộ dữ liệu ngay"
+                        class="h-10 px-3 sm:px-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-200 text-slate-700 hover:text-[#1554B5] text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition">
+                        <i id="manualSyncIcon" class="fas fa-rotate text-sm"></i>
+                        <span class="hidden md:inline">Đồng bộ 同步</span>
+                    </button>
+
+                    <button type="button" onclick="openChangePasswordModal(false)" title="Đổi mật khẩu cá nhân"
+                        class="h-10 px-3 sm:px-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition">
+                        <i class="fas fa-key text-amber-600 text-sm"></i>
+                        <span class="hidden md:inline">Đổi MK 改密</span>
+                    </button>
+
+                    <div class="hidden sm:flex flex-col items-end px-3 border-l border-slate-200">
+                        <span id="currentUserName" class="text-sm font-bold text-slate-800 leading-tight">User</span>
+                        <span id="currentUserRoleBadge" class="text-[11px] font-semibold px-2 py-0.5 mt-0.5 rounded bg-blue-50 text-[#1554B5]">Role</span>
+                    </div>
+
+                    <button type="button" onclick="handleLogout()" title="Đăng xuất"
+                        class="h-10 px-3 sm:px-3.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition">
+                        <i class="fas fa-right-from-bracket text-sm"></i>
+                        <span class="hidden sm:inline">Thoát 退出</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Thanh Tabs Chuyển Mục -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-1.5 overflow-x-auto border-t border-slate-100">
+                <button type="button" id="tabBtnCustomers" onclick="switchMainTab('customers')"
+                    class="tab-active px-4 py-3.5 text-sm sm:text-[15px] whitespace-nowrap flex items-center gap-2 transition">
+                    <i class="fas fa-shield-halved"></i>
+                    <span>Danh Sách Khách Hàng 客户保护列表</span>
+                </button>
+                <button type="button" id="tabBtnRegister" onclick="switchMainTab('register')"
+                    class="px-4 py-3.5 text-sm sm:text-[15px] text-slate-600 hover:text-[#1554B5] font-medium whitespace-nowrap flex items-center gap-2 transition">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Đăng Ký Khách Mới 新增报备</span>
+                </button>
+                <button type="button" id="tabBtnStaff" onclick="switchMainTab('staff')"
+                    class="hidden px-4 py-3.5 text-sm sm:text-[15px] text-slate-600 hover:text-[#1554B5] font-medium whitespace-nowrap flex items-center gap-2 transition">
+                    <i class="fas fa-users-gear"></i>
+                    <span>Quản Lý Nhân Sự Sale 团队管理</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Nội Dung Chính -->
+        <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+            <!-- Thẻ Thống Kê Nhanh -->
+            <section class="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5">
+                <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs sm:text-sm font-semibold text-slate-500">Tổng Hồ Sơ 总客户数</span>
+                        <span class="w-9 h-9 rounded-xl bg-blue-50 text-[#1554B5] flex items-center justify-center shrink-0"><i class="fas fa-building text-base"></i></span>
+                    </div>
+                    <p id="statTotalCustomers" class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2.5">0</p>
+                </div>
+                <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs sm:text-sm font-semibold text-slate-500">Đang Bảo Vệ 保护中</span>
+                        <span class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0"><i class="fas fa-shield-check text-base"></i></span>
+                    </div>
+                    <p id="statProtectedCustomers" class="text-2xl sm:text-3xl font-extrabold text-emerald-600 mt-2.5">0</p>
+                </div>
+                <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs sm:text-sm font-semibold text-slate-500">Đã Chốt Đơn 已成交</span>
+                        <span class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0"><i class="fas fa-handshake text-base"></i></span>
+                    </div>
+                    <p id="statClosedCustomers" class="text-2xl sm:text-3xl font-extrabold text-indigo-600 mt-2.5">0</p>
+                </div>
+                <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs sm:text-sm font-semibold text-slate-500">Công Hải (Tự Do) 公海池</span>
+                        <span class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0"><i class="fas fa-water text-base"></i></span>
+                    </div>
+                    <p id="statPublicPoolCustomers" class="text-2xl sm:text-3xl font-extrabold text-amber-600 mt-2.5">0</p>
+                </div>
+            </section>
+
+            <!-- ==================== MỤC 1: DANH SÁCH KHÁCH HÀNG ==================== -->
+            <section id="sectionCustomers" class="space-y-4">
+                <!-- Thanh Tìm Kiếm & Bộ Lọc -->
+                <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+                    <div class="flex flex-col lg:flex-row gap-3">
+                        <div class="relative flex-1">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400">
+                                <i class="fas fa-search text-base"></i>
+                            </span>
+                            <input type="text" id="searchCustomerInput" oninput="debouncedRenderCustomers()"
+                                placeholder="Tìm theo Tên công ty, Mã số thuế (MST), Sale phụ trách... 搜索公司名/税号/销售..."
+                                class="w-full h-12 pl-11 pr-4 text-[15px] border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1554B5]">
+                        </div>
+                        <div class="flex flex-wrap sm:flex-nowrap gap-2.5">
+                            <select id="filterStatusSelect" onchange="renderCustomerViews()"
+                                class="h-12 px-3.5 text-sm border border-slate-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#1554B5]">
+                                <option value="ALL">Tất cả trạng thái 全部状态</option>
+                                <option value="PROTECTED">Đang bảo vệ 保护中</option>
+                                <option value="CLOSED">Đã chốt đơn 已成交 (+180d)</option>
+                                <option value="EXPIRING">Sắp hết hạn (≤15 ngày) 即将到期</option>
+                                <option value="PUBLIC">Công hải (Tự do) 公海池</option>
+                            </select>
+                            <select id="filterSaleSelect" onchange="renderCustomerViews()"
+                                class="hidden h-12 px-3.5 text-sm border border-slate-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#1554B5]">
+                                <option value="ALL">Tất cả Sale 全部销售</option>
+                            </select>
+                            <button type="button" onclick="exportCustomersToExcel()"
+                                class="h-12 px-4.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold flex items-center gap-2 whitespace-nowrap shadow-xs transition">
+                                <i class="fas fa-file-excel text-base"></i>
+                                <span>Xuất Excel 导出</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Danh Sách Thẻ Khách Hàng 2 Tầng -->
+                <div id="customerCardsContainer" class="space-y-4"></div>
+            </section>
+
+            <!-- ==================== MỤC 2: ĐĂNG KÝ KHÁCH HÀNG MỚI ==================== -->
+            <section id="sectionRegister" class="hidden">
+                <div class="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-xs">
+                    <div class="mb-6 pb-4 border-b border-slate-100">
+                        <h3 class="text-xl font-bold text-slate-900 flex items-center gap-2.5">
+                            <i class="fas fa-file-signature text-[#1554B5]"></i>
+                            <span>Đăng Ký Bảo Vệ Khách Hàng Mới 新增客户报备</span>
+                        </h3>
+                        <p class="text-sm text-slate-500 mt-1.5">
+                            Hệ thống tự động kiểm tra trùng lặp theo <strong>Mã số thuế (MST)</strong>. Thời hạn bảo vệ mặc định là <strong>90 ngày</strong>.
+                        </p>
+                    </div>
+
+                    <form id="registerCustomerForm" onsubmit="event.preventDefault(); handleRegisterCustomer();" class="space-y-4.5">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Tên Công Ty / Doanh Nghiệp 公司全称 <span class="text-red-500">*</span></label>
+                            <input type="text" id="regCompanyName" required placeholder="Nhập đầy đủ tên công ty khách hàng..."
+                                class="w-full h-12 px-4 text-[15px] border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1554B5]">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Mã Số Thuế (MST) 税号 <span class="text-red-500">*</span></label>
+                                <input type="text" id="regTaxCode" required oninput="checkDuplicateTaxLive()"
+                                    placeholder="Ví dụ: 0312345678"
+                                    class="w-full h-12 px-4 text-[15px] font-mono border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1554B5]">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Ngày Đăng Ký 报备日期 <span class="text-red-500">*</span></label>
+                                <input type="date" id="regDateInput" required
+                                    class="w-full h-12 px-4 text-[15px] border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1554B5]">
+                            </div>
+                        </div>
+
+                        <!-- Cảnh báo trùng lặp MST trực tiếp -->
+                        <div id="liveDuplicateAlert" class="hidden p-4 rounded-xl text-sm"></div>
+
+                        <div id="regAssignSaleWrapper" class="hidden">
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Phân Bổ Cho Sale Phụ Trách 指定负责销售</label>
+                            <select id="regAssignSaleSelect"
+                                class="w-full h-12 px-4 text-[15px] border border-slate-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#1554B5]"></select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Ghi Chú Nhu Cầu / Sản Phẩm Quan Tâm 客户需求备注</label>
+                            <textarea id="regNoteInput" rows="3" placeholder="Ghi chú sản phẩm khách hỏi, tiến độ làm việc..."
+                                class="w-full p-4 text-[15px] border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1554B5]"></textarea>
+                        </div>
+
+                        <div class="pt-3 flex flex-col sm:flex-row gap-3">
+                            <button type="submit"
+                                class="flex-1 h-12 bg-[#1554B5] hover:bg-[#073B8C] text-white text-[15px] font-bold rounded-xl shadow-sm flex items-center justify-center gap-2 transition">
+                                <i class="fas fa-shield-plus"></i>
+                                <span>Xác Nhận Đăng Ký Bảo Vệ 提交报备</span>
+                            </button>
+                            <button type="button" onclick="switchMainTab('customers')"
+                                class="h-12 px-6 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[15px] font-semibold rounded-xl transition">
+                                Hủy 返回
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- ==================== MỤC 3: QUẢN LÝ NHÂN SỰ SALE (CHỈ ADMIN) ==================== -->
+            <section id="sectionStaff" class="hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Form Cấp Tài Khoản Sale Mới -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                        <div class="pb-3.5 border-b border-slate-100">
+                            <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                <i class="fas fa-user-plus text-[#1554B5]"></i>
+                                <span>Cấp Tài Khoản Sale Mới 新增销售账号</span>
+                            </h3>
+                            <p class="text-sm text-slate-500 mt-1">
+                                Sale đăng nhập lần đầu sẽ <strong>bắt buộc đổi sang mật khẩu riêng tư</strong> (mã hóa SHA-256, Admin không xem được).
+                            </p>
+                        </div>
+
+                        <form id="createStaffForm" onsubmit="event.preventDefault(); handleCreateStaff();" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Họ Tên Nhân Viên Sale 销售姓名 <span class="text-red-500">*</span></label>
+                                <input type="text" id="newStaffName" required placeholder="Ví dụ: Nguyễn Văn A (Sale 01)"
+                                    class="w-full h-11 px-3.5 text-[15px] border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1554B5]">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Email Đăng Nhập 登录邮箱 <span class="text-red-500">*</span></label>
+                                <input type="email" id="newStaffEmail" required placeholder="Ví dụ: sale01@leoren.vn"
+                                    class="w-full h-11 px-3.5 text-[15px] border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1554B5]">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">Mật Khẩu Khởi Tạo 初始密码 <span class="text-red-500">*</span></label>
+                                <input type="text" id="newStaffTempPass" required value="Leoren@123"
+                                    class="w-full h-11 px-3.5 text-[15px] font-mono border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1554B5]">
+                            </div>
+                            <button type="submit"
+                                class="w-full h-12 bg-[#1554B5] hover:bg-[#073B8C] text-white text-[15px] font-bold rounded-xl shadow-xs flex items-center justify-center gap-2 transition">
+                                <i class="fas fa-plus"></i>
+                                <span>Tạo Tài Khoản Sale 创建账号</span>
+                            </button>
+                        </form>
+
+                        <!-- Khung Copy Thông Tin Gửi Sale -->
+                        <div id="newStaffShareBox" class="hidden p-4 rounded-xl bg-emerald-50 border border-emerald-200 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-bold text-emerald-800"><i class="fas fa-check-circle mr-1"></i> Đã tạo & đồng bộ Cloud!</span>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-emerald-900 mb-1">Link web công ty (GitHub Pages):</label>
+                                <input type="text" id="publicAppUrlInput" oninput="savePublicAppUrl(this.value)"
+                                    placeholder="Dán link web GitHub của công ty (nếu có)..."
+                                    class="w-full h-9 px-3 text-xs sm:text-sm bg-white border border-emerald-300 rounded-lg focus:outline-none">
+                            </div>
+                            <textarea id="generatedStaffInviteText" rows="5" readonly
+                                class="w-full p-3 text-xs sm:text-sm font-mono bg-white border border-emerald-200 rounded-lg text-slate-700 focus:outline-none"></textarea>
+                            <button type="button" onclick="copyStaffInviteText()"
+                                class="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg flex items-center justify-center gap-2 transition">
+                                <i class="fas fa-copy"></i>
+                                <span>Copy Thông Tin Gửi Cho Sale 复制发送</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Danh Sách Nhân Sự Sale -->
+                    <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                        <div class="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-slate-100">
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-900">Danh Sách Tài Khoản Sale 销售人员列表</h3>
+                                <p class="text-sm text-slate-500">Mật khẩu sau khi Sale tự đổi sẽ được mã hóa SHA-256 và ẩn hoàn toàn với Admin.</p>
+                            </div>
+                            <button type="button" onclick="downloadStandaloneBackupHtml()"
+                                class="h-10 px-4 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold flex items-center gap-2 transition">
+                                <i class="fas fa-download"></i>
+                                <span>Tải File index.html Dự Phòng</span>
+                            </button>
+                        </div>
+
+                        <div id="staffListContainer" class="space-y-3"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ==================== MODAL 1: ĐỔI MẬT KHẨU (BẮT BUỘC LẦN ĐẦU & TỰ NGUYỆN) ==================== -->
+    <div id="changePasswordModal" class="hidden fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 sm:p-7 animate-modal">
+            <div class="flex items-start justify-between gap-3 mb-4">
+                <div>
+                    <span id="forcePwdBadge" class="hidden inline-block text-xs font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-800 mb-2">
+                        <i class="fas fa-shield-exclamation mr-1"></i> Bắt Buộc Bảo Mật Lần Đầu 首次登录必改
+                    </span>
+                    <h3 class="text-xl font-bold text-slate-900">Đặt Mật Khẩu Mới Riêng Tư 设置新密码</h3>
+                    <p class="text-sm text-slate-500 mt-1.5">
+                        Mật khẩu mới sẽ được mã hóa một chiều (SHA-256). <strong>Ngay cả Admin cũng không thể xem được mật khẩu này của bạn.</strong>
+                    </p>
+                </div>
+                <button type="button" id="closeChangePwdBtn" onclick="closeChangePasswordModal()"
+                    class="w-9 h-9 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 flex items-center justify-center">
+                    <i class="fas fa-times text-base"></i>
+                </button>
+            </div>
+
+            <form onsubmit="event.preventDefault(); handleSaveNewPassword();" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Mật Khẩu Mới 新密码 (Tối thiểu 6 ký tự) <span class="text-red-500">*</span></label>
+                    <input type="password" id="newPrivatePasswordInput" required minlength="6" placeholder="Nhập mật khẩu mới của riêng bạn..."
+                        class="w-full h-12 px-4 text-[15px] border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1554B5]">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Xác Nhận Lại Mật Khẩu Mới 确认新密码 <span class="text-red-500">*</span></label>
+                    <input type="password" id="confirmPrivatePasswordInput" required minlength="6" placeholder="Nhập lại mật khẩu mới..."
+                        class="w-full h-12 px-4 text-[15px] border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1554B5]">
+                </div>
+
+                <div id="changePwdErrorMsg" class="hidden text-sm font-medium text-red-600 bg-red-50 border border-red-200 px-3.5 py-2.5 rounded-xl"></div>
+
+                <button type="submit"
+                    class="w-full h-12 bg-[#1554B5] hover:bg-[#073B8C] text-white text-[15px] font-bold rounded-xl shadow-sm flex items-center justify-center gap-2 transition">
+                    <i class="fas fa-lock"></i>
+                    <span>Lưu Mật Khẩu Riêng Tư 保存专属密码</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL 2: GHI CHÚ & LỊCH SỬ CHĂM SÓC ==================== -->
+    <div id="customerHistoryModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 animate-modal max-h-[90vh] flex flex-col">
+            <div class="flex items-start justify-between gap-3 pb-3.5 border-b border-slate-100">
+                <div>
+                    <h3 id="historyModalCompanyTitle" class="text-lg font-bold text-slate-900">Chi Tiết & Lịch Sử Chăm Sóc</h3>
+                    <p id="historyModalTaxSubtitle" class="text-sm text-slate-500 font-mono mt-0.5"></p>
+                </div>
+                <button type="button" onclick="closeCustomerHistoryModal()"
+                    class="w-9 h-9 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 flex items-center justify-center">
+                    <i class="fas fa-times text-base"></i>
+                </button>
+            </div>
+
+            <div class="py-3.5 space-y-2 border-b border-slate-100">
+                <label class="block text-sm font-semibold text-slate-700">Thêm Nhật Ký Chăm Sóc Mới 新增跟进记录</label>
+                <div class="flex gap-2.5">
+                    <input type="text" id="newCareLogInput" placeholder="Nhập nội dung trao đổi, báo giá, tiến độ..."
+                        class="flex-1 h-11 px-3.5 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1554B5]">
+                    <button type="button" onclick="submitNewCareLog()"
+                        class="h-11 px-4.5 px-4 bg-[#1554B5] hover:bg-[#073B8C] text-white text-sm font-semibold rounded-xl whitespace-nowrap">
+                        Lưu Ghi Chú
+                    </button>
+                </div>
+            </div>
+
+            <div id="customerHistoryTimeline" class="flex-1 overflow-y-auto py-3.5 space-y-3 text-sm"></div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL 3: PHÂN LOẠI KHÁCH HÀNG & GIÁ BÁN A/B/C (CHỈ ADMIN) ==================== -->
+    <div id="tierClassificationModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 animate-modal">
+            <div class="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-4">
+                <h3 class="text-lg font-bold text-slate-900">Phân Loại Khách Hàng & Giá Bán 客户与价格分级</h3>
+                <button type="button" onclick="closeTierModal()" class="w-9 h-9 rounded-lg text-slate-400 hover:bg-slate-100 flex items-center justify-center">
+                    <i class="fas fa-times text-base"></i>
+                </button>
+            </div>
+            <p id="tierModalCompanyName" class="text-sm font-semibold text-[#1554B5] mb-4"></p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Phân Hạng Khách Hàng 客户等级</label>
+                    <select id="tierCustomerGradeSelect" class="w-full h-12 px-3.5 text-[15px] border border-slate-300 rounded-xl bg-white">
+                        <option value="Chưa phân loại">Chưa phân loại 未分级</option>
+                        <option value="Hạng A (VIP / Lớn)">Hạng A (VIP / Lớn) A级大客户</option>
+                        <option value="Hạng B (Tiềm năng)">Hạng B (Tiềm năng) B级潜力客户</option>
+                        <option value="Hạng C (Tiêu chuẩn)">Hạng C (Tiêu chuẩn) C级标准客户</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Chính Sách Giá Bán 价格政策等级</label>
+                    <select id="tierPriceLevelSelect" class="w-full h-12 px-3.5 text-[15px] border border-slate-300 rounded-xl bg-white">
+                        <option value="Chưa áp giá">Chưa áp giá 未定价</option>
+                        <option value="Giá A (Đại lý cấp 1)">Giá A (Đại lý cấp 1) A级价格</option>
+                        <option value="Giá B (Khách sỉ)">Giá B (Khách sỉ) B级价格</option>
+                        <option value="Giá C (Bán lẻ / Chuẩn)">Giá C (Bán lẻ / Chuẩn) C级价格</option>
+                    </select>
+                </div>
+                <div class="pt-2 flex gap-2.5">
+                    <button type="button" onclick="saveCustomerTierClassification()"
+                        class="flex-1 h-12 bg-[#1554B5] hover:bg-[#073B8C] text-white text-[15px] font-bold rounded-xl">
+                        Lưu Phân Loại 保存分级
+                    </button>
+                    <button type="button" onclick="closeTierModal()"
+                        class="h-12 px-5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[15px] font-semibold rounded-xl">
+                        Hủy
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL XÁC NHẬN THAO TÁC (THAY THẾ CONFIRM) ==================== -->
+    <div id="customConfirmModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 animate-modal">
+            <h4 id="confirmModalTitle" class="text-lg font-bold text-slate-900 mb-2">Xác nhận thao tác</h4>
+            <p id="confirmModalMessage" class="text-sm text-slate-600 leading-relaxed mb-6"></p>
+            <div class="flex justify-end gap-2.5">
+                <button type="button" onclick="resolveCustomConfirm(false)"
+                    class="h-11 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold">
+                    Hủy 取消
+                </button>
+                <button type="button" onclick="resolveCustomConfirm(true)"
+                    class="h-11 px-5 rounded-xl bg-[#1554B5] hover:bg-[#073B8C] text-white text-sm font-semibold">
+                    Đồng Ý 确认
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== TOAST THÔNG BÁO ==================== -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-md pointer-events-none"></div>
+
+    <script>
+        // ==================== 1. CẤU HÌNH HỆ THỐNG & TÀI KHOẢN MẶC ĐỊNH ====================
+        const LOGO_URL = "https://www.leoren.vn/wp-content/uploads/2023/08/logo-leoren.png";
+
+        const ADMIN_ACCOUNT_CONFIG = {
+            id: "admin-leoren-master",
+            name: "Quản Trị Viên (Admin)",
+            email: "leorenintlvn@gmail.com",
+            password: "Leoren668@",
+            role: "ADMIN"
+        };
+
+        // Danh sách tài khoản Sale nhúng sẵn (có thể bổ sung thêm trực tiếp trên giao diện Admin)
+        const PRESET_STAFF_ACCOUNTS = [
+            {
+                id: "sale-preset-01",
+                name: "Sale 01 (Mẫu)",
+                email: "sale01@leoren.vn",
+                tempPassword: "Leoren@123",
+                passwordHash: "",
+                mustChangePassword: true,
+                role: "SALE",
+                updatedAt: 1730000000000
+            }
+        ];
+
+        const DEFAULT_PUBLIC_APP_URL = "";
+        const CLOUD_BLOB_ID_PRESET = "019ab8c4-7f21-7e90-b412-9c8d5e4f3a10";
+        const STORAGE_KEYS = {
+            USERS: "leoren_crm_users_v8",
+            CUSTOMERS: "leoren_crm_customers_v8",
+            SESSION: "leoren_crm_session_v8",
+            PUBLIC_URL: "leoren_crm_public_url_v8",
+            CLOUD_ID: "leoren_crm_cloud_blob_id_v8",
+            DELETED_USERS: "leoren_crm_deleted_users_v8",
+            DELETED_CUSTS: "leoren_crm_deleted_custs_v8"
+        };
+
+        // ==================== 2. TRẠNG THÁI TOÀN CỤC ====================
+        let currentUser = null;
+        let usersList = [];
+        let customersList = [];
+        let deletedUserEmails = [];
+        let deletedCustomerIds = [];
+        let isPendingFirstPasswordChange = false;
+        let activeHistoryCustomerId = null;
+        let activeTierCustomerId = null;
+        let confirmCallbackResolver = null;
+        let searchDebounceTimer = null;
+        let cloudSyncTimer = null;
+        let isSyncingCloud = false;
+        const broadcastChannel = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("leoren_crm_realtime_sync") : null;
+
+        // ==================== 3. TIỆN ÍCH AN TOÀN & MÃ HÓA SHA-256 ====================
+        const safeStorage = {
+            get(key) {
+                try { return localStorage.getItem(key); } catch (e) { return null; }
+            },
+            set(key, val) {
+                try { localStorage.setItem(key, val); } catch (e) {}
+            },
+            remove(key) {
+                try { localStorage.removeItem(key); } catch (e) {}
+            }
+        };
+
+        function escapeHTML(str) {
+            if (str === null || str === undefined) return "";
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+
+        function sanitizeInputText(str) {
+            if (!str) return "";
+            return String(str).replace(/<[^>]*>?/gm, "").trim();
+        }
+
+        function normalizeEmail(email) {
+            return String(email || "").trim().toLowerCase();
+        }
+
+        function normalizeTaxCode(tax) {
+            return String(tax || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+        }
+
+        async function hashPasswordPrivate(plainPassword, emailSalt) {
+            const raw = `LEOREN_SALT_2026::${normalizeEmail(emailSalt)}::${String(plainPassword)}`;
+            if (window.crypto && window.crypto.subtle) {
+                const msgUint8 = new TextEncoder().encode(raw);
+                const hashBuffer = await window.crypto.subtle.digest("SHA-256", msgUint8);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return "sha256:" + hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+            }
+            // Dự phòng cho trình duyệt không hỗ trợ WebCrypto
+            let hash = 0;
+            for (let i = 0; i < raw.length; i++) {
+                hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+                hash |= 0;
+            }
+            return "fallback:" + Math.abs(hash).toString(16);
+        }
+
+        function showToast(message, type = "info") {
+            const container = document.getElementById("toastContainer");
+            if (!container) return;
+            const styles = {
+                success: "bg-emerald-600 text-white border-emerald-700",
+                error: "bg-rose-600 text-white border-rose-700",
+                warning: "bg-amber-500 text-white border-amber-600",
+                info: "bg-slate-800 text-white border-slate-900"
+            };
+            const icons = {
+                success: "fa-circle-check",
+                error: "fa-circle-exclamation",
+                warning: "fa-triangle-exclamation",
+                info: "fa-circle-info"
+            };
+            const el = document.createElement("div");
+            el.className = `pointer-events-auto px-4.5 py-3.5 px-4 rounded-xl shadow-lg border text-sm font-semibold flex items-center gap-3 animate-modal ${styles[type] || styles.info}`;
+            el.innerHTML = `<i class="fas ${icons[type] || icons.info} text-base"></i><span>${escapeHTML(message)}</span>`;
+            container.appendChild(el);
+            setTimeout(() => {
+                el.style.opacity = "0";
+                el.style.transition = "opacity 0.25s ease";
+                setTimeout(() => el.remove(), 260);
+            }, 3400);
+        }
+
+        function askCustomConfirm(title, message) {
+            return new Promise((resolve) => {
+                confirmCallbackResolver = resolve;
+                document.getElementById("confirmModalTitle").textContent = title;
+                document.getElementById("confirmModalMessage").textContent = message;
+                document.getElementById("customConfirmModal").classList.remove("hidden");
+            });
+        }
+
+        function resolveCustomConfirm(result) {
+            document.getElementById("customConfirmModal").classList.add("hidden");
+            if (confirmCallbackResolver) {
+                confirmCallbackResolver(result);
+                confirmCallbackResolver = null;
+            }
+        }
+
+        function handleBrandLogoError(imgEl, sizeClass) {
+            if (!imgEl || !imgEl.parentElement) return;
+            imgEl.parentElement.innerHTML = `
+                <div class="${sizeClass} rounded-xl bg-gradient-to-br from-[#1554B5] to-[#073B8C] text-white font-extrabold flex items-center justify-center shadow-sm tracking-wider">
+                    LR
+                </div>`;
+        }
+
+        function renderBrandLogos() {
+            const loginBox = document.getElementById("loginLogoContainer");
+            const headerBox = document.getElementById("headerLogoContainer");
+            if (loginBox) {
+                loginBox.innerHTML = `<img src="${LOGO_URL}" alt="LEOREN" class="h-14 w-auto object-contain mx-auto" onerror="handleBrandLogoError(this, 'w-14 h-14 text-xl')">`;
+            }
+            if (headerBox) {
+                headerBox.innerHTML = `<img src="${LOGO_URL}" alt="LEOREN" class="h-9 w-auto object-contain" onerror="handleBrandLogoError(this, 'w-9 h-9 text-sm')">`;
+            }
+        }
+
+        // ==================== 4. XỬ LÝ THỜI GIAN BẢO VỆ KHÁCH HÀNG ====================
+        function getTodayISO() {
+            const now = new Date();
+            const offset = now.getTimezoneOffset() * 60000;
+            return new Date(now.getTime() - offset).toISOString().split("T")[0];
+        }
+
+        function addDaysToISO(dateStr, days) {
+            const base = dateStr ? new Date(dateStr + "T00:00:00") : new Date();
+            if (isNaN(base.getTime())) return getTodayISO();
+            base.setDate(base.getDate() + Number(days || 0));
+            const offset = base.getTimezoneOffset() * 60000;
+            return new Date(base.getTime() - offset).toISOString().split("T")[0];
+        }
+
+        function getDaysRemaining(expireDateStr) {
+            if (!expireDateStr) return 0;
+            const today = new Date(getTodayISO() + "T00:00:00");
+            const exp = new Date(expireDateStr + "T00:00:00");
+            return Math.ceil((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        }
+
+        function getEffectiveCustomerStatus(cust) {
+            if (cust.status === "PUBLIC") return "PUBLIC";
+            const daysLeft = getDaysRemaining(cust.expireDate);
+            if (daysLeft < 0) return "PUBLIC";
+            return cust.status === "CLOSED" ? "CLOSED" : "PROTECTED";
+        }
+
+        // ==================== 5. LƯU TRỮ & ĐỒNG BỘ ĐÁM MÂY ĐA THIẾT BỊ ====================
+        function loadLocalState() {
+            try {
+                const rawUsers = safeStorage.get(STORAGE_KEYS.USERS);
+                const parsedUsers = rawUsers ? JSON.parse(rawUsers) : [];
+                usersList = Array.isArray(parsedUsers) && parsedUsers.length > 0 ? parsedUsers : [...PRESET_STAFF_ACCOUNTS];
+            } catch (e) {
+                usersList = [...PRESET_STAFF_ACCOUNTS];
+            }
+
+            // Đảm bảo các tài khoản preset luôn tồn tại nếu chưa bị Admin xóa
+            try {
+                deletedUserEmails = JSON.parse(safeStorage.get(STORAGE_KEYS.DELETED_USERS) || "[]");
+                deletedCustomerIds = JSON.parse(safeStorage.get(STORAGE_KEYS.DELETED_CUSTS) || "[]");
+            } catch (e) {
+                deletedUserEmails = [];
+                deletedCustomerIds = [];
+            }
+
+            PRESET_STAFF_ACCOUNTS.forEach(preset => {
+                const emailNorm = normalizeEmail(preset.email);
+                if (!deletedUserEmails.includes(emailNorm) && !usersList.some(u => normalizeEmail(u.email) === emailNorm)) {
+                    usersList.push({ ...preset });
+                }
+            });
+
+            try {
+                const rawCusts = safeStorage.get(STORAGE_KEYS.CUSTOMERS);
+                const parsedCusts = rawCusts ? JSON.parse(rawCusts) : [];
+                customersList = Array.isArray(parsedCusts) ? parsedCusts : [];
+            } catch (e) {
+                customersList = [];
+            }
+        }
+
+        function saveLocalState() {
+            safeStorage.set(STORAGE_KEYS.USERS, JSON.stringify(usersList));
+            safeStorage.set(STORAGE_KEYS.CUSTOMERS, JSON.stringify(customersList));
+            safeStorage.set(STORAGE_KEYS.DELETED_USERS, JSON.stringify(deletedUserEmails));
+            safeStorage.set(STORAGE_KEYS.DELETED_CUSTS, JSON.stringify(deletedCustomerIds));
+        }
+
+        function getActiveCloudBlobId() {
+            return safeStorage.get(STORAGE_KEYS.CLOUD_ID) || CLOUD_BLOB_ID_PRESET;
+        }
+
+        function mergeCloudPayload(remote) {
+            if (!remote || typeof remote !== "object") return;
+
+            // Hợp nhất danh sách xóa
+            if (Array.isArray(remote.deletedUserEmails)) {
+                deletedUserEmails = Array.from(new Set([...deletedUserEmails, ...remote.deletedUserEmails.map(normalizeEmail)]));
+            }
+            if (Array.isArray(remote.deletedCustomerIds)) {
+                deletedCustomerIds = Array.from(new Set([...deletedCustomerIds, ...remote.deletedCustomerIds]));
+            }
+
+            // Hợp nhất danh sách tài khoản Sale theo Email (ưu tiên bản đã đổi mật khẩu SHA-256)
+            if (Array.isArray(remote.users)) {
+                const userMap = new Map();
+                usersList.forEach(u => {
+                    const key = normalizeEmail(u.email);
+                    if (key && !deletedUserEmails.includes(key)) userMap.set(key, u);
+                });
+
+                remote.users.forEach(ru => {
+                    const key = normalizeEmail(ru.email);
+                    if (!key || deletedUserEmails.includes(key)) return;
+                    const localU = userMap.get(key);
+                    if (!localU) {
+                        userMap.set(key, ru);
+                    } else {
+                        // Bảo vệ tuyệt đối mật khẩu riêng tư đã băm SHA-256
+                        const localHasHash = Boolean(localU.passwordHash && !localU.mustChangePassword);
+                        const remoteHasHash = Boolean(ru.passwordHash && !ru.mustChangePassword);
+
+                        if (remoteHasHash && !localHasHash) {
+                            userMap.set(key, { ...localU, ...ru, tempPassword: "", mustChangePassword: false });
+                        } else if (localHasHash && !remoteHasHash) {
+                            userMap.set(key, { ...ru, ...localU, tempPassword: "", mustChangePassword: false });
+                        } else if ((ru.updatedAt || 0) > (localU.updatedAt || 0)) {
+                            userMap.set(key, { ...localU, ...ru });
+                        }
+                    }
+                });
+                usersList = Array.from(userMap.values());
+            }
+
+            // Hợp nhất danh sách khách hàng theo ID
+            if (Array.isArray(remote.customers)) {
+                const custMap = new Map();
+                customersList.forEach(c => {
+                    if (c && c.id && !deletedCustomerIds.includes(c.id)) custMap.set(c.id, c);
+                });
+                remote.customers.forEach(rc => {
+                    if (!rc || !rc.id || deletedCustomerIds.includes(rc.id)) return;
+                    const localC = custMap.get(rc.id);
+                    if (!localC || (rc.updatedAt || 0) > (localC.updatedAt || 0)) {
+                        custMap.set(rc.id, rc);
+                    }
+                });
+                customersList = Array.from(custMap.values());
+            }
+
+            saveLocalState();
+        }
+
+        async function pushStateToCloud() {
+            saveLocalState();
+            if (broadcastChannel) {
+                try { broadcastChannel.postMessage({ type: "SYNC_NOW" }); } catch (e) {}
+            }
+            const blobId = getActiveCloudBlobId();
+            const payload = {
+                users: usersList,
+                customers: customersList,
+                deletedUserEmails,
+                deletedCustomerIds,
+                updatedAt: Date.now()
+            };
+
+            try {
+                const res = await fetch(`https://jsonblob.com/api/jsonBlob/${blobId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                if (res.status === 404) {
+                    const createRes = await fetch("https://jsonblob.com/api/jsonBlob", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+                    const loc = createRes.headers.get("Location") || createRes.headers.get("X-jsonblob");
+                    if (loc) {
+                        const newId = loc.split("/").pop();
+                        if (newId) safeStorage.set(STORAGE_KEYS.CLOUD_ID, newId);
+                    }
+                }
+            } catch (e) {
+                // Giữ hoạt động offline mượt mà nếu mạng gián đoạn
+            }
+        }
+
+        async function pullStateFromCloud(alsoPushBack = false) {
+            if (isSyncingCloud) return;
+            isSyncingCloud = true;
+            try {
+                const blobId = getActiveCloudBlobId();
+                const res = await fetch(`https://jsonblob.com/api/jsonBlob/${blobId}`, {
+                    method: "GET",
+                    headers: { "Accept": "application/json" }
+                });
+                if (res.ok) {
+                    const remoteData = await res.json();
+                    mergeCloudPayload(remoteData);
+                    if (currentUser) {
+                        refreshAllViews();
+                    }
+                }
+                if (alsoPushBack) {
+                    await pushStateToCloud();
+                }
+            } catch (e) {
+                // Bỏ qua lỗi mạng tạm thời
+            } finally {
+                isSyncingCloud = false;
+            }
+        }
+
+        async function forceSyncNow(silent = false) {
+            const icon = document.getElementById("manualSyncIcon");
+            if (icon) icon.classList.add("fa-spin");
+            try {
+                await pullStateFromCloud(true);
+                if (!silent) {
+                    showToast("Đã đồng bộ dữ liệu mới nhất giữa tất cả thiết bị! 已完成多设备同步！", "success");
+                }
+            } finally {
+                if (icon) icon.classList.remove("fa-spin");
+            }
+        }
+
+        if (broadcastChannel) {
+            broadcastChannel.onmessage = () => {
+                loadLocalState();
+                if (currentUser) refreshAllViews();
+            };
+        }
+
+        // ==================== 6. XÁC THỰC ĐĂNG NHẬP & ĐỔI MẬT KHẨU RIÊNG TƯ ====================
+        function togglePasswordVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (!input || !icon) return;
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.replace("fa-eye", "fa-eye-slash");
+            } else {
+                input.type = "password";
+                icon.classList.replace("fa-eye-slash", "fa-eye");
+            }
+        }
+
+        function showLoginError(msg) {
+            const box = document.getElementById("loginErrorMsg");
+            if (!box) return;
+            if (!msg) {
+                box.classList.add("hidden");
+                box.textContent = "";
+            } else {
+                box.textContent = msg;
+                box.classList.remove("hidden");
+            }
+        }
+
+        async function executeLoginAttempt() {
+            const emailInput = document.getElementById("loginEmail");
+            const passInput = document.getElementById("loginPassword");
+            const btn = document.getElementById("loginSubmitBtn");
+
+            const emailVal = normalizeEmail(emailInput ? emailInput.value : "");
+            const passVal = String(passInput ? passInput.value : "").trim();
+
+            showLoginError("");
+            if (!emailVal || !passVal) {
+                showLoginError("Vui lòng nhập đầy đủ Email và Mật khẩu! 请输入邮箱和密码！");
+                return;
+            }
+
+            if (btn) btn.disabled = true;
+
+            try {
+                // 1. Kiểm tra trực tiếp tài khoản Admin mặc định
+                if (emailVal === normalizeEmail(ADMIN_ACCOUNT_CONFIG.email) && passVal === ADMIN_ACCOUNT_CONFIG.password) {
+                    completeLoginSession({
+                        id: ADMIN_ACCOUNT_CONFIG.id,
+                        name: ADMIN_ACCOUNT_CONFIG.name,
+                        email: ADMIN_ACCOUNT_CONFIG.email,
+                        role: "ADMIN",
+                        mustChangePassword: false
+                    });
+                    return;
+                }
+
+                // 2. Đồng bộ dữ liệu mới nhất từ Cloud trước khi kiểm tra tài khoản Sale
+                await pullStateFromCloud(false);
+
+                const matchedSale = usersList.find(u => normalizeEmail(u.email) === emailVal);
+                if (!matchedSale) {
+                    showLoginError("Không tìm thấy tài khoản Email này. Vui lòng kiểm tra lại hoặc liên hệ Admin! 未找到该邮箱账号！");
+                    return;
+                }
+
+                // 3. Đối chiếu mật khẩu khởi tạo (nếu chưa đổi) hoặc mã băm SHA-256 (nếu đã đổi)
+                let isPasswordValid = false;
+                if (matchedSale.passwordHash && !matchedSale.mustChangePassword) {
+                    const enteredHash = await hashPasswordPrivate(passVal, emailVal);
+                    isPasswordValid = (enteredHash === matchedSale.passwordHash);
+                } else {
+                    const tempPass = String(matchedSale.tempPassword || "").trim();
+                    if (tempPass && passVal === tempPass) {
+                        isPasswordValid = true;
+                    } else if (matchedSale.passwordHash) {
+                        const enteredHash = await hashPasswordPrivate(passVal, emailVal);
+                        isPasswordValid = (enteredHash === matchedSale.passwordHash);
+                    }
+                }
+
+                if (!isPasswordValid) {
+                    showLoginError("Mật khẩu không chính xác! Vui lòng kiểm tra lại. 密码错误，请重试！");
+                    return;
+                }
+
+                completeLoginSession(matchedSale);
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        function completeLoginSession(userObj) {
+            currentUser = { ...userObj };
+            const remember = document.getElementById("rememberMeCheckbox")?.checked;
+            if (remember) {
+                safeStorage.set(STORAGE_KEYS.SESSION, JSON.stringify({
+                    email: currentUser.email,
+                    role: currentUser.role,
+                    name: currentUser.name,
+                    id: currentUser.id
+                }));
+            } else {
+                safeStorage.remove(STORAGE_KEYS.SESSION);
+            }
+
+            document.getElementById("loginScreen").classList.add("hidden");
+            document.getElementById("mainAppScreen").classList.remove("hidden");
+
+            // Cập nhật thông tin thanh Header
+            document.getElementById("currentUserName").textContent = currentUser.name;
+            const roleBadge = document.getElementById("currentUserRoleBadge");
+            roleBadge.textContent = currentUser.role === "ADMIN" ? "ADMIN QUẢN TRỊ" : "SALE NHÂN VIÊN";
+
+            // Phân quyền Tab & Bộ lọc
+            const tabStaff = document.getElementById("tabBtnStaff");
+            const filterSale = document.getElementById("filterSaleSelect");
+            const regAssignWrapper = document.getElementById("regAssignSaleWrapper");
+
+            if (currentUser.role === "ADMIN") {
+                tabStaff.classList.remove("hidden");
+                filterSale.classList.remove("hidden");
+                regAssignWrapper.classList.remove("hidden");
+            } else {
+                tabStaff.classList.add("hidden");
+                filterSale.classList.add("hidden");
+                regAssignWrapper.classList.add("hidden");
+            }
+
+            refreshAllViews();
+
+            // Kiểm tra bắt buộc đổi mật khẩu lần đầu đối với Sale
+            if (currentUser.role === "SALE" && (currentUser.mustChangePassword || !currentUser.passwordHash)) {
+                isPendingFirstPasswordChange = true;
+                openChangePasswordModal(true);
+            } else {
+                isPendingFirstPasswordChange = false;
+                showToast(`Chào mừng ${currentUser.name} đã đăng nhập! 欢迎登录！`, "success");
+            }
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            isPendingFirstPasswordChange = false;
+            safeStorage.remove(STORAGE_KEYS.SESSION);
+            document.getElementById("loginPassword").value = "";
+            showLoginError("");
+            document.getElementById("mainAppScreen").classList.add("hidden");
+            document.getElementById("loginScreen").classList.remove("hidden");
+        }
+
+        function openChangePasswordModal(isForced = false) {
+            if (!currentUser) return;
+            if (currentUser.role === "ADMIN" && !isForced) {
+                showToast("Tài khoản Admin mặc định cấu hình trực tiếp trong mã nguồn hệ thống.", "info");
+                return;
+            }
+            const modal = document.getElementById("changePasswordModal");
+            const closeBtn = document.getElementById("closeChangePwdBtn");
+            const badge = document.getElementById("forcePwdBadge");
+            const errBox = document.getElementById("changePwdErrorMsg");
+
+            document.getElementById("newPrivatePasswordInput").value = "";
+            document.getElementById("confirmPrivatePasswordInput").value = "";
+            errBox.classList.add("hidden");
+
+            if (isForced || isPendingFirstPasswordChange) {
+                closeBtn.classList.add("hidden");
+                badge.classList.remove("hidden");
+            } else {
+                closeBtn.classList.remove("hidden");
+                badge.classList.add("hidden");
+            }
+            modal.classList.remove("hidden");
+        }
+
+        function closeChangePasswordModal() {
+            if (isPendingFirstPasswordChange) {
+                showToast("Bạn cần đặt mật khẩu mới trước khi sử dụng hệ thống! 请先修改新密码！", "warning");
+                return;
+            }
+            document.getElementById("changePasswordModal").classList.add("hidden");
+        }
+
+        async function handleSaveNewPassword() {
+            if (!currentUser) return;
+            const newPwd = String(document.getElementById("newPrivatePasswordInput").value || "").trim();
+            const confirmPwd = String(document.getElementById("confirmPrivatePasswordInput").value || "").trim();
+            const errBox = document.getElementById("changePwdErrorMsg");
+
+            if (newPwd.length < 6) {
+                errBox.textContent = "Mật khẩu mới phải có ít nhất 6 ký tự! 新密码至少需要6位字符！";
+                errBox.classList.remove("hidden");
+                return;
+            }
+            if (newPwd !== confirmPwd) {
+                errBox.textContent = "Mật khẩu xác nhận không trùng khớp! 两次输入的密码不一致！";
+                errBox.classList.remove("hidden");
+                return;
+            }
+
+            const emailNorm = normalizeEmail(currentUser.email);
+            const hashed = await hashPasswordPrivate(newPwd, emailNorm);
+
+            const idx = usersList.findIndex(u => normalizeEmail(u.email) === emailNorm);
+            if (idx !== -1) {
+                usersList[idx] = {
+                    ...usersList[idx],
+                    tempPassword: "",
+                    passwordHash: hashed,
+                    mustChangePassword: false,
+                    updatedAt: Date.now()
+                };
+                currentUser = { ...usersList[idx] };
+            }
+
+            isPendingFirstPasswordChange = false;
+            document.getElementById("changePasswordModal").classList.add("hidden");
+            await pushStateToCloud();
+            refreshAllViews();
+            showToast("Đã lưu mật khẩu riêng tư (mã hóa SHA-256)! 专属密码已保存！", "success");
+        }
+
+        // ==================== 7. ĐIỀU HƯỚNG TAB & QUẢN LÝ NHÂN SỰ SALE ====================
+        function switchMainTab(tabName) {
+            if (isPendingFirstPasswordChange) {
+                openChangePasswordModal(true);
+                return;
+            }
+            const sections = {
+                customers: document.getElementById("sectionCustomers"),
+                register: document.getElementById("sectionRegister"),
+                staff: document.getElementById("sectionStaff")
+            };
+            const buttons = {
+                customers: document.getElementById("tabBtnCustomers"),
+                register: document.getElementById("tabBtnRegister"),
+                staff: document.getElementById("tabBtnStaff")
+            };
+
+            Object.keys(sections).forEach(key => {
+                if (sections[key]) sections[key].classList.toggle("hidden", key !== tabName);
+                if (buttons[key]) {
+                    if (key === tabName) {
+                        buttons[key].classList.add("tab-active");
+                        buttons[key].classList.remove("text-slate-600");
+                    } else {
+                        buttons[key].classList.remove("tab-active");
+                        buttons[key].classList.add("text-slate-600");
+                    }
+                }
+            });
+
+            if (tabName === "register") {
+                document.getElementById("regDateInput").value = getTodayISO();
+                document.getElementById("liveDuplicateAlert").classList.add("hidden");
+                populateSaleDropdowns();
+            } else if (tabName === "staff") {
+                renderStaffList();
+            }
+        }
+
+        function getResolvedPublicAppUrl() {
+            const saved = safeStorage.get(STORAGE_KEYS.PUBLIC_URL) || DEFAULT_PUBLIC_APP_URL;
+            if (saved && saved.startsWith("http")) return saved.trim();
+            const href = window.location.href.split("#")[0].split("?")[0];
+            if (href.startsWith("http://") || href.startsWith("https://")) {
+                return href;
+            }
+            return "";
+        }
+
+        function savePublicAppUrl(val) {
+            safeStorage.set(STORAGE_KEYS.PUBLIC_URL, String(val || "").trim());
+        }
+
+        async function handleCreateStaff() {
+            if (!currentUser || currentUser.role !== "ADMIN") return;
+            const nameVal = sanitizeInputText(document.getElementById("newStaffName").value);
+            const emailVal = normalizeEmail(document.getElementById("newStaffEmail").value);
+            const tempPassVal = String(document.getElementById("newStaffTempPass").value || "").trim();
+
+            if (!nameVal || !emailVal || !tempPassVal) {
+                showToast("Vui lòng nhập đầy đủ thông tin Sale! 请填写完整销售信息！", "error");
+                return;
+            }
+            if (emailVal === normalizeEmail(ADMIN_ACCOUNT_CONFIG.email)) {
+                showToast("Email này trùng với tài khoản Admin!", "error");
+                return;
+            }
+            if (usersList.some(u => normalizeEmail(u.email) === emailVal)) {
+                showToast("Email nhân viên Sale này đã tồn tại trong hệ thống!", "error");
+                return;
+            }
+
+            deletedUserEmails = deletedUserEmails.filter(e => e !== emailVal);
+            const newStaff = {
+                id: "sale-" + Date.now(),
+                name: nameVal,
+                email: emailVal,
+                tempPassword: tempPassVal,
+                passwordHash: "",
+                mustChangePassword: true,
+                role: "SALE",
+                updatedAt: Date.now()
+            };
+
+            usersList.push(newStaff);
+            await pushStateToCloud();
+
+            // Hiển thị khung thông tin gửi Sale
+            const appUrl = getResolvedPublicAppUrl();
+            document.getElementById("publicAppUrlInput").value = appUrl;
+            const inviteMsg = [
+                `[LEOREN CRM] Tài khoản đăng nhập của ${nameVal}:`,
+                appUrl ? `• Link hệ thống: ${appUrl}` : `• Mở link web CRM của công ty`,
+                `• Email: ${emailVal}`,
+                `• Mật khẩu lần đầu: ${tempPassVal}`,
+                `(Lưu ý: Đăng nhập lần đầu hệ thống sẽ yêu cầu tự đổi mật khẩu riêng tư)`
+            ].join("\n");
+
+            document.getElementById("generatedStaffInviteText").value = inviteMsg;
+            document.getElementById("newStaffShareBox").classList.remove("hidden");
+
+            document.getElementById("newStaffName").value = "";
+            document.getElementById("newStaffEmail").value = "";
+            renderStaffList();
+            populateSaleDropdowns();
+            showToast(`Đã tạo tài khoản cho ${nameVal} & đồng bộ Cloud!`, "success");
+        }
+
+        function copyStaffInviteText() {
+            const textarea = document.getElementById("generatedStaffInviteText");
+            if (!textarea) return;
+            textarea.select();
+            textarea.setSelectionRange(0, 99999);
+            try {
+                document.execCommand("copy");
+                showToast("Đã copy thông tin đăng nhập để gửi cho Sale! 已复制登录信息！", "success");
+            } catch (e) {
+                showToast("Vui lòng bôi đen và copy thủ công khung văn bản trên.", "warning");
+            }
+        }
+
+        async function resetStaffTempPassword(email) {
+            const emailNorm = normalizeEmail(email);
+            const staff = usersList.find(u => normalizeEmail(u.email) === emailNorm);
+            if (!staff) return;
+
+            const ok = await askCustomConfirm(
+                "Cấp Lại Mật Khẩu Tạm Cho Sale",
+                `Xác nhận đặt lại mật khẩu tạm về "Leoren@123" cho ${staff.name}? Sale sẽ phải đổi mật khẩu mới ở lần đăng nhập kế tiếp.`
+            );
+            if (!ok) return;
+
+            staff.tempPassword = "Leoren@123";
+            staff.passwordHash = "";
+            staff.mustChangePassword = true;
+            staff.updatedAt = Date.now();
+            await pushStateToCloud();
+            renderStaffList();
+            showToast(`Đã cấp lại mật khẩu tạm "Leoren@123" cho ${staff.name}!`, "success");
+        }
+
+        async function deleteStaffAccount(email) {
+            const emailNorm = normalizeEmail(email);
+            const staff = usersList.find(u => normalizeEmail(u.email) === emailNorm);
+            if (!staff) return;
+
+            const ok = await askCustomConfirm(
+                "Xóa Tài Khoản Sale",
+                `Bạn có chắc chắn muốn xóa tài khoản ${staff.name} (${staff.email})?`
+            );
+            if (!ok) return;
+
+            usersList = usersList.filter(u => normalizeEmail(u.email) !== emailNorm);
+            if (!deletedUserEmails.includes(emailNorm)) deletedUserEmails.push(emailNorm);
+            await pushStateToCloud();
+            renderStaffList();
+            populateSaleDropdowns();
+            showToast(`Đã xóa tài khoản ${staff.name}.`, "info");
+        }
+
+        function renderStaffList() {
+            const container = document.getElementById("staffListContainer");
+            if (!container) return;
+
+            if (usersList.length === 0) {
+                container.innerHTML = `<div class="p-8 text-center text-sm text-slate-400">Chưa có tài khoản Sale nào. Hãy tạo tài khoản ở khung bên trái.</div>`;
+                return;
+            }
+
+            container.innerHTML = usersList.map(staff => {
+                const isPrivateChanged = Boolean(staff.passwordHash && !staff.mustChangePassword);
+                const statusBadge = isPrivateChanged
+                    ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                           <i class="fas fa-lock text-xs"></i> Đã đổi MK riêng tư (Admin ẩn)
+                       </span>`
+                    : `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                           <i class="fas fa-clock text-xs"></i> Chờ đổi MK lần đầu (${escapeHTML(staff.tempPassword || "Leoren@123")})
+                       </span>`;
+
+                return `
+                    <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div class="space-y-1">
+                            <div class="flex flex-wrap items-center gap-2.5">
+                                <span class="text-base font-bold text-slate-900">${escapeHTML(staff.name)}</span>
+                                ${statusBadge}
+                            </div>
+                            <p class="text-sm text-slate-500 font-mono">${escapeHTML(staff.email)}</p>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button type="button" onclick="resetStaffTempPassword('${escapeHTML(staff.email)}')"
+                                class="h-9 px-3.5 rounded-lg bg-white hover:bg-amber-50 text-amber-700 border border-slate-200 text-xs sm:text-sm font-semibold transition">
+                                <i class="fas fa-key mr-1"></i> Reset MK Tạm
+                            </button>
+                            <button type="button" onclick="deleteStaffAccount('${escapeHTML(staff.email)}')"
+                                class="h-9 px-3 rounded-lg bg-white hover:bg-rose-50 text-rose-600 border border-slate-200 text-xs sm:text-sm font-semibold transition">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        // ==================== 8. NGHIỆP VỤ KHÁCH HÀNG & BẢO VỆ TRÙNG MST ====================
+        function populateSaleDropdowns() {
+            const filterSel = document.getElementById("filterSaleSelect");
+            const assignSel = document.getElementById("regAssignSaleSelect");
+
+            if (filterSel) {
+                const prev = filterSel.value;
+                filterSel.innerHTML = `<option value="ALL">Tất cả Sale 全部销售</option>` +
+                    usersList.map(u => `<option value="${escapeHTML(normalizeEmail(u.email))}">${escapeHTML(u.name)}</option>`).join("");
+                filterSel.value = prev || "ALL";
+            }
+
+            if (assignSel) {
+                assignSel.innerHTML = usersList.map(u =>
+                    `<option value="${escapeHTML(normalizeEmail(u.email))}">${escapeHTML(u.name)} (${escapeHTML(u.email)})</option>`
+                ).join("");
+            }
+        }
+
+        function checkDuplicateTaxLive() {
+            const taxVal = normalizeTaxCode(document.getElementById("regTaxCode").value);
+            const alertBox = document.getElementById("liveDuplicateAlert");
+            if (!taxVal || taxVal.length < 5) {
+                alertBox.classList.add("hidden");
+                return;
+            }
+
+            const existing = customersList.find(c => normalizeTaxCode(c.taxCode) === taxVal);
+            if (!existing) {
+                alertBox.className = "p-3 rounded-xl text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium";
+                alertBox.innerHTML = `<i class="fas fa-circle-check mr-1.5"></i> Mã số thuế hợp lệ, chưa có trên hệ thống — có thể đăng ký bảo vệ ngay!`;
+                alertBox.classList.remove("hidden");
+                return;
+            }
+
+            const effStatus = getEffectiveCustomerStatus(existing);
+            if (effStatus === "PUBLIC") {
+                alertBox.className = "p-3 rounded-xl text-xs bg-amber-50 text-amber-800 border border-amber-200 font-medium";
+                alertBox.innerHTML = `<i class="fas fa-water mr-1.5"></i> Khách hàng <strong>${escapeHTML(existing.companyName)}</strong> đang ở <strong>Công hải (Hết hạn bảo vệ)</strong>. Khi bấm xác nhận, hồ sơ sẽ được chuyển quyền bảo vệ cho bạn!`;
+                alertBox.classList.remove("hidden");
+            } else {
+                const daysLeft = getDaysRemaining(existing.expireDate);
+                alertBox.className = "p-3 rounded-xl text-xs bg-rose-50 text-rose-800 border border-rose-200 font-semibold";
+                alertBox.innerHTML = `<i class="fas fa-ban mr-1.5"></i> CẢNH BÁO TRÙNG KHÁCH: Công ty <strong>${escapeHTML(existing.companyName)}</strong> đang được Sale <strong>${escapeHTML(existing.ownerName)}</strong> bảo vệ đến ngày <strong>${escapeHTML(existing.expireDate)}</strong> (còn ${daysLeft} ngày)!`;
+                alertBox.classList.remove("hidden");
+            }
+        }
+
+        async function handleRegisterCustomer() {
+            if (!currentUser) return;
+            const companyName = sanitizeInputText(document.getElementById("regCompanyName").value);
+            const taxCode = normalizeTaxCode(document.getElementById("regTaxCode").value);
+            const regDate = document.getElementById("regDateInput").value || getTodayISO();
+            const note = sanitizeInputText(document.getElementById("regNoteInput").value);
+
+            if (!companyName || !taxCode) {
+                showToast("Vui lòng nhập đầy đủ Tên công ty và Mã số thuế! 请输入公司名称和税号！", "error");
+                return;
+            }
+
+            // Xác định Sale phụ trách
+            let ownerEmail = normalizeEmail(currentUser.email);
+            let ownerName = currentUser.name;
+            if (currentUser.role === "ADMIN") {
+                const selectedEmail = document.getElementById("regAssignSaleSelect").value;
+                const foundSale = usersList.find(u => normalizeEmail(u.email) === selectedEmail);
+                if (foundSale) {
+                    ownerEmail = normalizeEmail(foundSale.email);
+                    ownerName = foundSale.name;
+                }
+            }
+
+            // Kiểm tra trùng MST
+            const existing = customersList.find(c => normalizeTaxCode(c.taxCode) === taxCode);
+            const expireDate = addDaysToISO(regDate, 90);
+
+            if (existing) {
+                const effStatus = getEffectiveCustomerStatus(existing);
+                if (effStatus !== "PUBLIC") {
+                    showToast(`Khách hàng MST ${taxCode} đang được ${existing.ownerName} bảo vệ! 客户保护冲突！`, "error");
+                    return;
+                }
+                // Tiếp nhận lại khách từ Công hải
+                existing.companyName = companyName;
+                existing.ownerEmail = ownerEmail;
+                existing.ownerName = ownerName;
+                existing.registerDate = regDate;
+                existing.expireDate = expireDate;
+                existing.status = "PROTECTED";
+                existing.note = note || existing.note;
+                existing.updatedAt = Date.now();
+                existing.history = existing.history || [];
+                existing.history.unshift({
+                    time: new Date().toLocaleString("vi-VN"),
+                    actor: currentUser.name,
+                    action: `Tiếp nhận lại từ Công hải cho ${ownerName} (Bảo vệ 90 ngày đến ${expireDate})`
+                });
+            } else {
+                const newCust = {
+                    id: "cust-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+                    companyName,
+                    taxCode,
+                    ownerEmail,
+                    ownerName,
+                    registerDate: regDate,
+                    expireDate,
+                    status: "PROTECTED",
+                    customerGrade: "Chưa phân loại",
+                    priceLevel: "Chưa áp giá",
+                    note,
+                    updatedAt: Date.now(),
+                    history: [
+                        {
+                            time: new Date().toLocaleString("vi-VN"),
+                            actor: currentUser.name,
+                            action: `Đăng ký bảo vệ mới cho ${ownerName} (90 ngày đến ${expireDate})${note ? " — Ghi chú: " + note : ""}`
+                        }
+                    ]
+                };
+                customersList.unshift(newCust);
+            }
+
+            await pushStateToCloud();
+            document.getElementById("registerCustomerForm").reset();
+            switchMainTab("customers");
+            refreshAllViews();
+            showToast(`Đã đăng ký bảo vệ thành công: ${companyName} (+90 ngày)!`, "success");
+        }
+
+        async function markCustomerClosed(custId) {
+            const cust = customersList.find(c => c.id === custId);
+            if (!cust) return;
+            const ok = await askCustomConfirm(
+                "Xác Nhận Chốt Đơn (+180 Ngày)",
+                `Xác nhận khách hàng "${cust.companyName}" đã chốt đơn? Thời hạn bảo vệ sẽ được gia hạn thành 180 ngày tính từ hôm nay.`
+            );
+            if (!ok) return;
+
+            const newExp = addDaysToISO(getTodayISO(), 180);
+            cust.status = "CLOSED";
+            cust.expireDate = newExp;
+            cust.updatedAt = Date.now();
+            cust.history = cust.history || [];
+            cust.history.unshift({
+                time: new Date().toLocaleString("vi-VN"),
+                actor: currentUser.name,
+                action: `Xác nhận CHỐT ĐƠN — Gia hạn bảo vệ 180 ngày (đến ${newExp})`
+            });
+            await pushStateToCloud();
+            refreshAllViews();
+            showToast(`Đã xác nhận chốt đơn & gia hạn 180 ngày cho ${cust.companyName}!`, "success");
+        }
+
+        async function extendCustomer90Days(custId) {
+            const cust = customersList.find(c => c.id === custId);
+            if (!cust) return;
+            const ok = await askCustomConfirm(
+                "Gia Hạn Bảo Vệ (+90 Ngày)",
+                `Gia hạn thêm 90 ngày bảo vệ cho khách hàng "${cust.companyName}"?`
+            );
+            if (!ok) return;
+
+            const baseDate = getDaysRemaining(cust.expireDate) > 0 ? cust.expireDate : getTodayISO();
+            const newExp = addDaysToISO(baseDate, 90);
+            if (cust.status === "PUBLIC") cust.status = "PROTECTED";
+            cust.expireDate = newExp;
+            cust.updatedAt = Date.now();
+            cust.history = cust.history || [];
+            cust.history.unshift({
+                time: new Date().toLocaleString("vi-VN"),
+                actor: currentUser.name,
+                action: `Gia hạn thêm 90 ngày bảo vệ (đến ${newExp})`
+            });
+            await pushStateToCloud();
+            refreshAllViews();
+            showToast(`Đã gia hạn bảo vệ đến ${newExp}!`, "success");
+        }
+
+        async function releaseCustomerToPublic(custId) {
+            const cust = customersList.find(c => c.id === custId);
+            if (!cust) return;
+            const ok = await askCustomConfirm(
+                "Thu Hồi Về Công Hải",
+                `Đưa khách hàng "${cust.companyName}" về Công hải (Tự do) để các Sale khác có thể tiếp nhận?`
+            );
+            if (!ok) return;
+
+            cust.status = "PUBLIC";
+            cust.updatedAt = Date.now();
+            cust.history = cust.history || [];
+            cust.history.unshift({
+                time: new Date().toLocaleString("vi-VN"),
+                actor: currentUser.name,
+                action: `Đã thu hồi hồ sơ về Công hải (Tự do)`
+            });
+            await pushStateToCloud();
+            refreshAllViews();
+            showToast(`Đã chuyển ${cust.companyName} về Công hải.`, "info");
+        }
+
+        async function claimPublicCustomer(custId) {
+            if (!currentUser) return;
+            const cust = customersList.find(c => c.id === custId);
+            if (!cust) return;
+
+            const ok = await askCustomConfirm(
+                "Tiếp Nhận Khách Từ Công Hải",
+                `Bạn muốn nhận bảo vệ khách hàng "${cust.companyName}" trong 90 ngày tới?`
+            );
+            if (!ok) return;
+
+            const newExp = addDaysToISO(getTodayISO(), 90);
+            cust.ownerEmail = normalizeEmail(currentUser.email);
+            cust.ownerName = currentUser.name;
+            cust.registerDate = getTodayISO();
+            cust.expireDate = newExp;
+            cust.status = "PROTECTED";
+            cust.updatedAt = Date.now();
+            cust.history = cust.history || [];
+            cust.history.unshift({
+                time: new Date().toLocaleString("vi-VN"),
+                actor: currentUser.name,
+                action: `Tiếp nhận từ Công hải — Bảo vệ 90 ngày đến ${newExp}`
+            });
+            await pushStateToCloud();
+            refreshAllViews();
+            showToast(`Đã tiếp nhận bảo vệ ${cust.companyName} đến ${newExp}!`, "success");
+        }
+
+        async function deleteCustomerRecord(custId) {
+            if (!currentUser || currentUser.role !== "ADMIN") return;
+            const cust = customersList.find(c => c.id === custId);
+            if (!cust) return;
+            const ok = await askCustomConfirm(
+                "Xóa Hồ Sơ Khách Hàng",
+                `Xóa vĩnh viễn hồ sơ "${cust.companyName}" (MST: ${cust.taxCode}) khỏi hệ thống?`
+            );
+            if (!ok) return;
+
+            customersList = customersList.filter(c => c.id !== custId);
+            if (!deletedCustomerIds.includes(custId)) deletedCustomerIds.push(custId);
+            await pushStateToCloud();
+            refreshAllViews();
+            showToast("Đã xóa hồ sơ khách hàng.", "info");
+        }
+
+        // ==================== 9. MODAL GHI CHÚ LỊCH SỬ & PHÂN LOẠI A/B/C ====================
+        function openCustomerHistoryModal(custId) {
+            const cust = customersList.find(c => c.id === custId);
+            if (!cust) return;
+            activeHistoryCustomerId = custId;
+            document.getElementById("historyModalCompanyTitle").textContent = cust.companyName;
+            document.getElementById("historyModalTaxSubtitle").textContent = `MST: ${cust.taxCode} • Sale: ${cust.ownerName}`;
+            document.getElementById("newCareLogInput").value = "";
+            renderHistoryTimeline(cust);
+            document.getElementById("customerHistoryModal").classList.remove("hidden");
+        }
+
+        function closeCustomerHistoryModal() {
+            activeHistoryCustomerId = null;
+            document.getElementById("customerHistoryModal").classList.add("hidden");
+        }
+
+        function renderHistoryTimeline(cust) {
+            const box = document.getElementById("customerHistoryTimeline");
+            const logs = Array.isArray(cust.history) ? cust.history : [];
+            if (logs.length === 0) {
+                box.innerHTML = `<p class="text-center text-slate-400 py-6">Chưa có nhật ký chăm sóc nào.</p>`;
+                return;
+            }
+            box.innerHTML = logs.map(item => `
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                    <div class="flex items-center justify-between text-[11px] text-slate-500">
+                        <span class="font-bold text-[#1554B5]">${escapeHTML(item.actor || "Hệ thống")}</span>
+                        <span>${escapeHTML(item.time || "")}</span>
+                    </div>
+                    <p class="text-slate-800 leading-relaxed">${escapeHTML(item.action || "")}</p>
+                </div>
+            `).join("");
+        }
+
+        async function submitNewCareLog() {
+            if (!activeHistoryCustomerId || !currentUser) return;
+            const input = document.getElementById("newCareLogInput");
+            const text = sanitizeInputText(input.value);
+            if (!text) return;
+
+            const cust = customersList.find(c => c.id === activeHistoryCustomerId);
+            if (!cust) return;
+
+            cust.note = text;
+            cust.updatedAt = Date.now();
+            cust.history = cust.history || [];
+            cust.history.unshift({
+                time: new Date().toLocaleString("vi-VN"),
+                actor: currentUser.name,
+                action: text
+            });
+            if (cust.history.length > 30) cust.history.length = 30;
+
+            input.value = "";
+            await pushStateToCloud();
+            renderHistoryTimeline(cust);
+            refreshAllViews();
+            showToast("Đã lưu nhật ký chăm sóc! 已保存跟进记录！", "success");
+        }
+
+        function openTierModal(custId) {
+            if (!currentUser || currentUser.role !== "ADMIN") return;
+            const cust = customersList.find(c => c.id === custId);
+            if (!cust) return;
+            activeTierCustomerId = custId;
+            document.getElementById("tierModalCompanyName").textContent = `${cust.companyName} (MST: ${cust.taxCode})`;
+            document.getElementById("tierCustomerGradeSelect").value = cust.customerGrade || "Chưa phân loại";
+            document.getElementById("tierPriceLevelSelect").value = cust.priceLevel || "Chưa áp giá";
+            document.getElementById("tierClassificationModal").classList.remove("hidden");
+        }
+
+        function closeTierModal() {
+            activeTierCustomerId = null;
+            document.getElementById("tierClassificationModal").classList.add("hidden");
+        }
+
+        async function saveCustomerTierClassification() {
+            if (!activeTierCustomerId || !currentUser || currentUser.role !== "ADMIN") return;
+            const cust = customersList.find(c => c.id === activeTierCustomerId);
+            if (!cust) return;
+
+            const grade = document.getElementById("tierCustomerGradeSelect").value;
+            const price = document.getElementById("tierPriceLevelSelect").value;
+
+            cust.customerGrade = grade;
+            cust.priceLevel = price;
+            cust.updatedAt = Date.now();
+            cust.history = cust.history || [];
+            cust.history.unshift({
+                time: new Date().toLocaleString("vi-VN"),
+                actor: currentUser.name,
+                action: `Admin phân loại: Khách hàng [${grade}] • Chính sách giá [${price}]`
+            });
+
+            closeTierModal();
+            await pushStateToCloud();
+            refreshAllViews();
+            showToast("Đã cập nhật phân loại Khách hàng & Giá bán!", "success");
+        }
+
+        // ==================== 10. HIỂN THỊ GIAO DIỆN THẺ KHÁCH HÀNG 2 TẦNG ====================
+        function debouncedRenderCustomers() {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(renderCustomerViews, 140);
+        }
+
+        function refreshAllViews() {
+            updateStatsCards();
+            populateSaleDropdowns();
+            renderCustomerViews();
+            if (currentUser && currentUser.role === "ADMIN") {
+                renderStaffList();
+            }
+        }
+
+        function updateStatsCards() {
+            let total = customersList.length;
+            let protectedCnt = 0;
+            let closedCnt = 0;
+            let publicCnt = 0;
+
+            customersList.forEach(c => {
+                const st = getEffectiveCustomerStatus(c);
+                if (st === "CLOSED") closedCnt++;
+                else if (st === "PROTECTED") protectedCnt++;
+                else publicCnt++;
+            });
+
+            document.getElementById("statTotalCustomers").textContent = total;
+            document.getElementById("statProtectedCustomers").textContent = protectedCnt;
+            document.getElementById("statClosedCustomers").textContent = closedCnt;
+            document.getElementById("statPublicPoolCustomers").textContent = publicCnt;
+        }
+
+        function renderCustomerViews() {
+            const container = document.getElementById("customerCardsContainer");
+            if (!container || !currentUser) return;
+
+            const keyword = sanitizeInputText(document.getElementById("searchCustomerInput")?.value || "").toLowerCase();
+            const statusFilter = document.getElementById("filterStatusSelect")?.value || "ALL";
+            const saleFilter = document.getElementById("filterSaleSelect")?.value || "ALL";
+            const isAdmin = currentUser.role === "ADMIN";
+            const currentEmail = normalizeEmail(currentUser.email);
+
+            const filtered = customersList.filter(cust => {
+                const effStatus = getEffectiveCustomerStatus(cust);
+                const daysLeft = getDaysRemaining(cust.expireDate);
+
+                // Sale chỉ thấy khách của mình hoặc khách ở Công hải (để chống trùng & tiếp nhận)
+                if (!isAdmin && effStatus !== "PUBLIC" && normalizeEmail(cust.ownerEmail) !== currentEmail) {
+                    // Vẫn cho phép tìm kiếm chính xác theo MST để biết khách đã có người bảo vệ
+                    if (!keyword || !normalizeTaxCode(cust.taxCode).toLowerCase().includes(keyword)) {
+                        return false;
+                    }
+                }
+
+                if (statusFilter === "PROTECTED" && effStatus !== "PROTECTED") return false;
+                if (statusFilter === "CLOSED" && effStatus !== "CLOSED") return false;
+                if (statusFilter === "PUBLIC" && effStatus !== "PUBLIC") return false;
+                if (statusFilter === "EXPIRING" && (effStatus === "PUBLIC" || daysLeft > 15)) return false;
+
+                if (isAdmin && saleFilter !== "ALL" && normalizeEmail(cust.ownerEmail) !== saleFilter) {
+                    return false;
+                }
+
+                if (keyword) {
+                    const haystack = `${cust.companyName} ${cust.taxCode} ${cust.ownerName} ${cust.note || ""}`.toLowerCase();
+                    if (!haystack.includes(keyword)) return false;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+                        <i class="fas fa-folder-open text-4xl text-slate-300 mb-3"></i>
+                        <p class="text-base font-semibold text-slate-600">Không tìm thấy hồ sơ khách hàng phù hợp</p>
+                        <p class="text-sm text-slate-400 mt-1">Thử thay đổi từ khóa tìm kiếm hoặc đăng ký khách hàng mới.</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(cust => {
+                const effStatus = getEffectiveCustomerStatus(cust);
+                const daysLeft = getDaysRemaining(cust.expireDate);
+                const isOwner = normalizeEmail(cust.ownerEmail) === currentEmail;
+                const canOperate = isAdmin || isOwner;
+
+                let statusBadge = "";
+                if (effStatus === "CLOSED") {
+                    statusBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-indigo-50 text-indigo-700 border border-indigo-200"><i class="fas fa-handshake"></i> Đã chốt đơn 已成交 (${daysLeft} ngày)</span>`;
+                } else if (effStatus === "PUBLIC") {
+                    statusBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-amber-50 text-amber-700 border border-amber-200"><i class="fas fa-water"></i> Công hải (Tự do) 公海池</span>`;
+                } else if (daysLeft <= 15) {
+                    statusBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-rose-50 text-rose-700 border border-rose-200"><i class="fas fa-clock"></i> Sắp hết hạn (Còn ${daysLeft} ngày)</span>`;
+                } else {
+                    statusBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"><i class="fas fa-shield-check"></i> Đang bảo vệ (Còn ${daysLeft} ngày)</span>`;
+                }
+
+                // Thanh nút thao tác nằm gọn hàng ngang phía dưới khung thông tin
+                let actionButtonsHTML = "";
+                if (effStatus === "PUBLIC") {
+                    actionButtonsHTML = `
+                        <button type="button" onclick="claimPublicCustomer('${cust.id}')"
+                            class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-semibold whitespace-nowrap inline-flex items-center gap-1.5 transition">
+                            <i class="fas fa-hand-holding-heart"></i> Nhận Bảo Vệ Từ Công Hải (+90d) 认领客户
+                        </button>`;
+                } else if (canOperate) {
+                    actionButtonsHTML = `
+                        <button type="button" onclick="markCustomerClosed('${cust.id}')"
+                            class="px-3.5 py-2 rounded-xl bg-[#1554B5] hover:bg-[#073B8C] text-white text-xs sm:text-sm font-semibold whitespace-nowrap inline-flex items-center gap-1.5 transition">
+                            <i class="fas fa-handshake"></i> Chốt đơn (+180d) 成交
+                        </button>
+                        <button type="button" onclick="extendCustomer90Days('${cust.id}')"
+                            class="px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#1554B5] border border-blue-200 text-xs sm:text-sm font-semibold whitespace-nowrap inline-flex items-center gap-1.5 transition">
+                            <i class="fas fa-calendar-plus"></i> Gia hạn (+90d) 延期
+                        </button>
+                        <button type="button" onclick="releaseCustomerToPublic('${cust.id}')"
+                            class="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs sm:text-sm font-semibold whitespace-nowrap inline-flex items-center gap-1.5 transition">
+                            <i class="fas fa-rotate-left"></i> Thu hồi Công hải 退回公海
+                        </button>`;
+                }
+
+                if (isAdmin) {
+                    actionButtonsHTML += `
+                        <button type="button" onclick="openTierModal('${cust.id}')"
+                            class="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs sm:text-sm font-semibold whitespace-nowrap inline-flex items-center gap-1.5 transition">
+                            <i class="fas fa-tags"></i> Phân loại A/B/C 分级
+                        </button>`;
+                }
+
+                if (canOperate || effStatus === "PUBLIC") {
+                    actionButtonsHTML += `
+                        <button type="button" onclick="openCustomerHistoryModal('${cust.id}')"
+                            class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold whitespace-nowrap inline-flex items-center gap-1.5 transition">
+                            <i class="fas fa-clock-rotate-left"></i> Ghi chú & Lịch sử (${(cust.history || []).length})
+                        </button>`;
+                }
+
+                if (isAdmin) {
+                    actionButtonsHTML += `
+                        <button type="button" onclick="deleteCustomerRecord('${cust.id}')"
+                            class="px-3.5 py-2 rounded-xl bg-white hover:bg-rose-50 text-rose-600 border border-slate-200 text-xs sm:text-sm font-semibold whitespace-nowrap inline-flex items-center gap-1.5 transition ml-auto">
+                            <i class="fas fa-trash"></i> Xóa
+                        </button>`;
+                }
+
+                const tierBadgesHTML = (cust.customerGrade && cust.customerGrade !== "Chưa phân loại") || (cust.priceLevel && cust.priceLevel !== "Chưa áp giá")
+                    ? `<div class="flex flex-wrap gap-2 mt-1.5">
+                           <span class="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">${escapeHTML(cust.customerGrade || "Chưa phân loại")}</span>
+                           <span class="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-cyan-50 text-cyan-700 border border-cyan-200">${escapeHTML(cust.priceLevel || "Chưa áp giá")}</span>
+                       </div>`
+                    : "";
+
+                return `
+                    <div class="bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:border-blue-300 transition overflow-hidden">
+                        <!-- Tầng 1: Thông tin doanh nghiệp -->
+                        <div class="p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                            <div class="space-y-2 min-w-0">
+                                <div class="flex flex-wrap items-center gap-2.5">
+                                    <h4 class="text-lg sm:text-[19px] font-extrabold text-slate-900 break-words leading-snug">${escapeHTML(cust.companyName)}</h4>
+                                    <span class="px-3 py-1 rounded-lg bg-slate-100 text-slate-700 font-mono text-xs sm:text-sm font-semibold">
+                                        MST: ${escapeHTML(cust.taxCode)}
+                                    </span>
+                                </div>
+                                ${tierBadgesHTML}
+                                <p class="text-sm text-slate-600 leading-relaxed">
+                                    <i class="fas fa-note-sticky text-slate-400 mr-1.5"></i>
+                                    ${cust.note ? escapeHTML(cust.note) : '<span class="text-slate-400 italic">Chưa có ghi chú chăm sóc</span>'}
+                                </p>
+                            </div>
+
+                            <div class="flex flex-wrap lg:flex-col items-start lg:items-end justify-between gap-2.5 shrink-0 border-t lg:border-t-0 pt-3 lg:pt-0 border-slate-100">
+                                ${statusBadge}
+                                <div class="text-sm text-slate-600 lg:text-right space-y-1">
+                                    <div>Sale phụ trách: <strong class="text-slate-900">${escapeHTML(cust.ownerName)}</strong></div>
+                                    <div class="text-xs sm:text-[13px] text-slate-500">Đăng ký: ${escapeHTML(cust.registerDate)} • Hết hạn: <strong class="text-slate-700">${escapeHTML(cust.expireDate)}</strong></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tầng 2: Thanh nút thao tác ngang phía dưới thông tin khách hàng -->
+                        ${actionButtonsHTML ? `
+                        <div class="px-5 sm:px-6 py-3 bg-slate-50/90 border-t border-slate-100 flex flex-wrap items-center gap-2.5">
+                            ${actionButtonsHTML}
+                        </div>` : ""}
+                    </div>
+                `;
+            }).join("");
+        }
+
+        // ==================== 11. XUẤT EXCEL & TẢI FILE DỰ PHÒNG ====================
+        function exportCustomersToExcel() {
+            if (typeof XLSX === "undefined") {
+                showToast("Thư viện xuất Excel đang tải, vui lòng thử lại sau vài giây.", "warning");
+                return;
+            }
+            const rows = customersList.map((c, idx) => ({
+                "STT": idx + 1,
+                "Tên Công Ty": c.companyName,
+                "Mã Số Thuế (MST)": c.taxCode,
+                "Sale Phụ Trách": c.ownerName,
+                "Email Sale": c.ownerEmail,
+                "Trạng Thái": getEffectiveCustomerStatus(c) === "CLOSED" ? "Đã chốt đơn" : (getEffectiveCustomerStatus(c) === "PUBLIC" ? "Công hải" : "Đang bảo vệ"),
+                "Ngày Đăng Ký": c.registerDate,
+                "Ngày Hết Hạn": c.expireDate,
+                "Phân Hạng Khách Hàng": c.customerGrade || "Chưa phân loại",
+                "Chính Sách Giá": c.priceLevel || "Chưa áp giá",
+                "Ghi Chú": c.note || ""
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(rows);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "BaoVeKhachHang");
+            XLSX.writeFile(wb, `LEOREN_CRM_KhachHang_${getTodayISO()}.xlsx`);
+            showToast("Đã xuất file Excel thành công! 已导出Excel文件！", "success");
+        }
+
+        function downloadStandaloneBackupHtml() {
+            const docHtml = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([docHtml], { type: "text/html;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "index.html";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            showToast("Đã tải tệp index.html dự phòng về máy!", "success");
+        }
+
+        // ==================== 12. KHỞI TẠO ỨNG DỤNG ====================
+        async function initAppBoot() {
+            renderBrandLogos();
+            loadLocalState();
+
+            // Tự động đồng bộ nền mỗi 10 giây
+            if (!cloudSyncTimer) {
+                cloudSyncTimer = setInterval(() => {
+                    pullStateFromCloud(false);
+                }, 10000);
+            }
+
+            await pullStateFromCloud(false);
+
+            // Khôi phục phiên đăng nhập nếu đã chọn ghi nhớ
+            try {
+                const rawSession = safeStorage.get(STORAGE_KEYS.SESSION);
+                if (rawSession) {
+                    const sess = JSON.parse(rawSession);
+                    if (sess && normalizeEmail(sess.email) === normalizeEmail(ADMIN_ACCOUNT_CONFIG.email)) {
+                        completeLoginSession({ ...ADMIN_ACCOUNT_CONFIG, mustChangePassword: false });
+                        return;
+                    }
+                    if (sess && sess.email) {
+                        const found = usersList.find(u => normalizeEmail(u.email) === normalizeEmail(sess.email));
+                        if (found) {
+                            completeLoginSession(found);
+                            return;
+                        }
+                    }
+                }
+            } catch (e) {}
+        }
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initAppBoot);
+        } else {
+            initAppBoot();
+        }
+    </script>
+</body>
+</html>
